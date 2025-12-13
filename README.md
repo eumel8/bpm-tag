@@ -26,11 +26,17 @@
   - Default BPM range: 84-146
 
   Usage:
+
+  ```
   ./bpm-tag-go song.mp3
   # Output: 128.456
+  ```
 
   # With custom BPM range:
+
+  ```
   ./bpm-tag-go -m 120 -x 180 song.mp3
+  ```
 
   The compiled binary bpm-tag-go is ready to use. The program faithfully replicates the BPM detection logic from the original C code while
   handling MP3 files directly.
