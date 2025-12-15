@@ -91,6 +91,42 @@ func scanForBPM(nrg []float64, slowest, fastest float64, steps, samples int) flo
 	return intervalToBPM(trough)
 }
 
+// testBPM calculates the autodifference score for a specific BPM
+func testBPM(nrg []float64, bpm float64, samples int) float64 {
+	interval := bpmToInterval(bpm)
+	t := 0.0
+	for s := 0; s < samples; s++ {
+		t += autodifference(nrg, interval)
+	}
+	return t / float64(samples)
+}
+
+// checkHarmonics verifies if the detected BPM should be halved or doubled
+func checkHarmonics(nrg []float64, bpm float64) float64 {
+	score := testBPM(nrg, bpm, 64)
+	scoreHalf := testBPM(nrg, bpm/2.0, 64)
+	scoreDouble := testBPM(nrg, bpm*2.0, 64)
+
+	// Prefer BPM in the 85-170 range (most common for music)
+	// If half the BPM is close in score and in preferred range, use it
+	if bpm > 160 && bpm/2.0 >= 80 {
+		// If halved BPM has similar or better score, prefer it
+		if scoreHalf <= score*1.1 {
+			return bpm / 2.0
+		}
+	}
+
+	// If double the BPM is close in score and in preferred range, use it
+	if bpm < 90 && bpm*2.0 <= 180 {
+		// If doubled BPM has similar or better score, prefer it
+		if scoreDouble <= score*1.1 {
+			return bpm * 2.0
+		}
+	}
+
+	return bpm
+}
+
 func analyzeBPM(reader io.Reader, minBPM, maxBPM float64) (float64, error) {
 	var nrg []float64
 	v := 0.0
@@ -127,6 +163,7 @@ func analyzeBPM(reader io.Reader, minBPM, maxBPM float64) (float64, error) {
 	}
 
 	bpm := scanForBPM(nrg, minBPM, maxBPM, 1024, 1024)
+	bpm = checkHarmonics(nrg, bpm)
 	return bpm, nil
 }
 
