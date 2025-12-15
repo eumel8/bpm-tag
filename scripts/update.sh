@@ -49,7 +49,25 @@ ${MYSQL} -e "SELECT DISTINCT discnr FROM titel ORDER BY discnr;" | while read -r
     fi
 
     POS=1
+    CHECK=0
     for FILE in "${FILES[@]}"; do
+
+        # check we already have bpm
+        CHECK=$(${MYSQL} -s -e "
+            SELECT bpm
+            FROM titel
+            WHERE discnr=${DISCN_DB}
+              AND pos=${POS}
+              LIMIT 1;
+              ")
+
+        CHECK=${CHECK:-0}
+        if (( CHECK > 0 ));then
+            echo "INFO: bpm already exists: ${POS} (DB discnr=${DISCN_DB})"
+            CHECK=0
+            ((POS++))
+            continue
+        fi
 
         BASENAME="$(basename "$FILE")"
         NAME_NO_EXT="${BASENAME%.*}"
@@ -64,6 +82,7 @@ ${MYSQL} -e "SELECT DISTINCT discnr FROM titel ORDER BY discnr;" | while read -r
 
         BPM=$(bpm-tag "${ALBUM_DIR}/${FILE}" || echo "0")
         FILE_ESCAPED=$(printf "%s%s%s" "${DB_DIR}/${DISCN_FS}/${FILE}" | sed "s/'/''/g")
+
 
         # bpm hinzufügen
         ${MYSQL} -e "
