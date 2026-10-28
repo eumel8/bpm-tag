@@ -1,5 +1,5 @@
 module bpm-tag
 
-go 1.25.5
+go 1.27.3
 
 require github.com/hajimehoshi/go-mp3 v0.3.4
